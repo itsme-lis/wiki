@@ -58,5 +58,6 @@
         font-size: 0.9em; height: 2.5em;
         min-width: 0; padding: 10px 4px;
         width: min-content;
+        cursor: url("assets/static/cursors/active.cur"), default !important;
     }
 }

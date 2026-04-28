@@ -10,11 +10,32 @@
     src: url("assets/fonts/gooddogbold.woff") format("woff");
     font-weight: 600; font-style: normal;
 }
+
 @font-face {
-    font-family: "segoe print"; /* semi-official (famobi) cyrillic alt */
-    src: url("assets/fonts/segoeprintbold.woff") format("woff");
-    font-weight: 400; font-style: normal;
+    font-family: "mplus rounded medium";
+    src: url("assets/fonts/mplusroundedmedium.woff2") format("woff2");
+    font-weight: 500;
+    font-style: normal;
 }
+@font-face {
+    font-family: "playpen sans semibold";
+    src: url("assets/fonts/playpensanssemibold.woff2") format("woff2");
+    font-weight: 600;
+    font-style: normal;
+}
+@font-face {
+    font-family: "cafe24 dongdong";
+    src: url("assets/fonts/cafe24dongdong.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+}
+@font-face {
+    font-family: "hunnin";
+    src: url("assets/fonts/hunnin.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+}
+
 @font-face {
     font-family: "jetbrains mono";
     src: url("assets/fonts/jetbrainsmono.woff") format("woff");
@@ -35,10 +56,16 @@
 * {box-sizing: border-box; margin: 0; padding: 0; scrollbar-width: none}
 *::-webkit-scrollbar {width: 0; height: 0}
 
+html, body, body * {
+    cursor: url("assets/static/cursors/idle.cur"), default !important;
+}
+
 body {
     min-height: 100vh; color: white;
     font-size: 1.1em; line-height: 1;
-    font-family: "gooddog", "segoe print", "comic sans ms", system-ui, sans-serif;
+    font-family: "gooddog", "mplus rounded medium", 
+                 "playpen sans semibold", "cafe24 dongdong", 
+                 "hunnin", "comic sans ms", system-ui, sans-serif;
     text-shadow: var(--stroke);
     background-color: #e9a856;
     --bg: url("assets/images/bg.webp");
@@ -58,6 +85,11 @@ a, :any-link {
     cursor: url("assets/static/cursors/link.cur"), default !important;
 }
 a:hover, :any-link:hover {color: #b4f4ff}
+
+button, [role="button"], select, summary,
+input, textarea, [contenteditable], [contenteditable="true"] {
+    cursor: url("assets/static/cursors/active.cur"), default !important;
+}
 
 /*//////////////////////////////////////////////////////////////////////*/
 
@@ -206,69 +238,6 @@ h1, h2, h3, h4, h5, h6 {font-weight: 400}
 
 /*//////////////////////////////////////////////////////////////////////*/
 
-.playgroundpanel {
-    position: fixed; left: 16px; bottom: 0;
-    width: min(900px, calc(100vw - 32px));
-    height: 40vh; min-height: 160px;
-    background: rgba(0,0,0,0.25);
-    border: 0; border-radius: 20px 20px 0 0;
-    z-index: 9000;
-    display: block; overflow: hidden;
-}
-.playgroundeditor {
-    position: relative;
-    width: 100%; height: 100%;
-}
-.playgrounddraghandle {
-    position: absolute;
-    top: -12px; left: -12px;
-    width: 34px; height: 34px;
-    border: 0; border-radius: 50%;
-    background: rgba(0,0,0,0.3);
-    z-index: 1000;
-}
-.playgrounddraghandle:hover {
-    background: rgba(0,0,0,0.75);
-}
-.playgroundinput {
-    width: 100%; height: 100%;
-    resize: none; border: 0;
-    background: rgba(0,0,0,0.25);
-    color: #f6f6f6; caret-color: #fff;
-    font-size: 1rem;
-    font-family: "jetbrainsmono", monospace;
-    padding: 10px 12px; line-height: 1.35;
-    border-radius: 20px;
-    text-shadow: none; white-space: pre-wrap;
-    word-break: break-word;
-}
-.playgroundinput:focus {outline: none}
-.playgroundinput::selection {
-    background: rgba(143, 238, 255, 0.35);
-}
-.playgroundtoggle {
-    position: fixed; left: 2em; bottom: 0;
-    width: 50px; height: 30px;
-    border: none; border-radius: 60px 60px 0 0;
-    background: var(--soft);
-    cursor: url("assets/static/cursors/active.cur"), default !important;
-    z-index: 9999;
-}
-.playgroundtoggle img {
-    width: 18px; height: 18px;
-    object-fit: contain;
-}
-.playgroundresizehandle {
-    position: absolute;
-    top: -12px; right: -12px;
-    width: 34px; height: 34px;
-    border: 0; border-radius: 50%;
-    background: rgba(0,0,0,0.3);
-    z-index: 1000;
-}
-.playgroundresizehandle:hover {
-    background: rgba(0,0,0,0.75);
-}
 @keyframes rotate {
     0% {transform: rotate(0deg)}
     100% {transform: rotate(360deg)}

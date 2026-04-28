@@ -1,0 +1,170 @@
+.visualeditor {
+    display: grid;
+    gap: 10px;
+}
+.vetitleheading {
+    min-height: 48px; margin: 0 0 4px;
+    border-bottom: 2px solid var(--softw) !important;
+}
+.vetitleheading:focus, .vecanvas:focus {
+    outline: none;
+}
+.vetoolbar {
+    display: flex; flex-wrap: wrap;
+    gap: 8px; padding: 8px;
+    border-radius: 12px; background: rgba(0,0,0,0.2);
+}
+.vemainbuttons {
+    display: flex; flex-wrap: wrap;
+    gap: 6px; align-items: center;
+}
+.veiconbtn {
+    border: 0; width: 48px; height: 48px;
+    border-radius: 8px;
+    display: inline-flex; align-items: center;
+    justify-content: center; background: none;
+}
+.veiconbtn:hover {background: rgba(0,0,0,0.1)}
+.veiconbtn img {
+    width: 48px; height: 48px;
+    object-fit: contain;
+}
+.veiconbtn, .vedropdowntoggle, .vedropdownmenu button,
+.vecitechoice, .vewidgetbtn, .verowactions {
+    cursor: url("assets/static/cursors/active.cur"), default !important;
+}
+
+/* for text sizes */
+.vedropdown {position: relative}
+.vedropdowntoggle {
+    width: auto; padding: 0 8px;
+    gap: 6px;
+}
+.vedown {
+    width: 14px !important; height: 14px !important;
+}
+.vedropdownmenu {
+    position: absolute; top: calc(100% + 6px);
+    left: 0; display: none;
+    grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;
+    min-width: 220px; padding: 8px;
+    border-radius: 10px; background: rgba(0,0,0,0.25);
+    z-index: 20; backdrop-filter: blur(10px);
+}
+.vedropdown.open .vedropdownmenu {display: grid}
+.vedropdownmenu button {
+    width: 48px; height: 48px;
+    border: 0; border-radius: 8px;
+    background: none; color: #fff;
+    font: inherit;
+}
+.vedropdownmenu button img {
+    width: 48px; height: 48px;
+}
+.vecitewrap {
+    display: flex;
+    align-items: stretch;
+}
+
+/* for cite choices */
+.vecitechoices {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px;
+}
+.vecitechoice {
+    border: 0; 
+    text-shadow: var(--stroke);
+    color: #fff; background: none;
+    font: inherit; font-size: 0.8em;
+    white-space: nowrap;
+}
+
+.veeditorframe {
+    border-radius: 12px;
+    overflow: hidden;
+}
+.vecanvas {
+    width: 100%; min-height: 360px;
+    border: 0; padding: 12px;
+    color: #f7f7f7; overflow-wrap: anywhere;
+}
+.vecanvas p {margin: 0 0 10px}
+
+/*//////////////////////////////////////////////////////////////////////*/
+
+.vewidget {
+    position: relative;
+    margin: 10px 0;
+    padding: 0; border: 0;
+    background: transparent;
+}
+.vewidgethead {
+    position: absolute;
+    top: 6px; right: 6px;
+    z-index: 5;
+    display: inline-flex;
+    gap: 4px;
+}
+.vewidgetbtn {
+    border: 0; background: rgba(0,0,0,0.2);
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+}
+.vewidgetbtn img {
+    width: 12px;
+    height: 12px;
+}
+.veiboxrows {
+    display: grid; gap: 6px;
+    margin-top: 6px;
+}
+.veiboxrow {
+    display: grid; grid-template-columns: 1fr 1fr 28px;
+    gap: 6px;
+}
+.veiboxrow .verowactions {
+    width: 30px; text-align: center;
+    padding: 4px;
+}
+.veiboxrow .verowactions .vewidgetbtn {
+    width: 20px; height: 20px;
+}
+.vetitle {
+    width: 100%; resize: vertical;
+    min-height: 56px; border: 0;
+    border-radius: 14px; padding: 12px;
+    color: #fff;
+    font: inherit; font-size: 1.75em;
+    line-height: 1.2; text-shadow: var(--stroke);
+}
+.vetitle:focus, .vesource:focus, .vevisualsurface:focus {
+    outline: none;
+}
+
+/*//////////////////////////////////////////////////////////////////////*/
+
+.vevisualsurface, .vesource {
+    width: 100%; min-height: 280px;
+    border: 0; resize: vertical;
+    padding: 12px; color: #f7f7f7;
+    font-size: 0.95rem; line-height: 1.35;
+    text-shadow: none; white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    cursor: url("assets/static/cursors/active.cur"), default !important;
+}
+.vevisualsurface {display: block}
+.vesource {display: none}
+.visualeditor.vesourceactive .vesource {display: block}
+.visualeditor.vesourceactive .vevisualsurface {display: none}
+
+.vestructurebar {
+    display: flex; gap: 6px;
+    padding: 8px; border-radius: 10px;
+    background: rgba(0,0,0,0.2);
+}
+.vepreview {
+    border-top: 2px dashed rgba(255,255,255,0.25);
+    margin-top: 4px; padding-top: 10px;
+}

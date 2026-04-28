@@ -21,6 +21,11 @@
     object-fit: contain;
 }
 
+.content pre, .content code, .paragraph, .quote,
+.articlelist li, .markdowntable th, .markdowntable td {
+    cursor: url("assets/static/cursors/idle.cur"), default !important;
+}
+
 /*//////////////////////////////////////////////////////////////////////*/
 
 ol * {

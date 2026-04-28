@@ -392,12 +392,12 @@
             // article links with a custom label
             .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, function (_, t, l) {
                 var key = normalizewikikey(t);
-                return '<a class="articlelink" data-wikilink-target="' + escapeattr(t) + '" data-wikilink-key="' + escapeattr(key) + '" href="' + escapeattr(makewikihref(t)) + '">' + l + "</a>";
+                return '<a class="articlelink" datawikilink-target="' + escapeattr(t) + '" datawikilink-key="' + escapeattr(key) + '" href="' + escapeattr(makewikihref(t)) + '">' + l + "</a>";
             })
             // article links
             .replace(/\[\[([^\]]+)\]\]/g, function (_, t) {
                 var key = normalizewikikey(t);
-                return '<a class="articlelink" data-wikilink-target="' + escapeattr(t) + '" data-wikilink-key="' + escapeattr(key) + '" href="' + escapeattr(makewikihref(t)) + '">' + t.replace(/_/g, " ") + "</a>";
+                return '<a class="articlelink" datawikilink-target="' + escapeattr(t) + '" datawikilink-key="' + escapeattr(key) + '" href="' + escapeattr(makewikihref(t)) + '">' + t.replace(/_/g, " ") + "</a>";
             })
             // external links
             .replace(/\[([^\]]+)\]\(((?:[^()\s]+|\([^()]*\))+)\)/g, function (_, label, href) {
@@ -464,7 +464,7 @@
             if (el.dataset.fallbackBound === "1") return;
             el.dataset.fallbackBound = "1";
             var originalsrc = el.getAttribute("src") || "";
-            var explicitfallback = el.getAttribute("data-fallback-src") || "";
+            var explicitfallback = el.getAttribute("datafallback-src") || "";
             var fallbacksrc = explicitfallback || buildmediafallback(originalsrc);
             var figure = el.closest("figure.embed");
 
@@ -564,7 +564,7 @@
             var mediatype = chosenmediatype || guessmediatype(media.ext);
             var alignclass = alignment ? " embed" + alignment : "";
             var fallbacksrc = buildmediafallback(rawmediaurl);
-            var mediaattrs = fallbacksrc ? ('data-fallback-src="' + escapeattr(fallbacksrc) + '"') : "";
+            var mediaattrs = fallbacksrc ? ('datafallback-src="' + escapeattr(fallbacksrc) + '"') : "";
 
             return (
                 '<figure class="embed' + alignclass + '">' +
@@ -600,7 +600,7 @@
             var msgbody = data.message ? parseinline(data.message) : "";
             return (
                 '<section class="msg msg-' + escapeattr(msgkind) + '">' +
-                '<img class="msgicon" src="' + escapeattr(msgicon) + '" alt="">' +
+                '<img class="msgicon" src="' + escapeattr(msgicon) + '">' +
                 '<div class="msgcontent">' +
                 '<p class="msglabel"><strong>' + escapehtml(msglabel) + "</strong></p>" +
                 (msgbody ? '<p class="msgtext">' + msgbody + "</p>" : "") +
@@ -695,7 +695,7 @@
     }
 
     async function updateallarticlelinkstates(scope) {
-        var links = scope.querySelectorAll("a.articlelink[data-wikilink-target]");
+        var links = scope.querySelectorAll("a.articlelink[datawikilink-target]");
         for (var i = 0; i < links.length; i++) {
             var link = links[i];
             var target = link.dataset.wikilinkTarget || "";
@@ -803,7 +803,7 @@
                 citationorder.push(id);
             }
             var idx = citationsbyid[id];
-            return '<sup class="citeref"><a id="citeref' + idx + '" href="#" data-cite-target="cite' + idx + '">[' + idx + "]</a></sup>";
+            return '<sup class="citeref"><a id="citeref' + idx + '" href="#" datacite-target="cite' + idx + '">[' + idx + "]</a></sup>";
         }
         function inlinewithcites(text) {
             return parseinline(text, { rendercitationref: registercitationref });
@@ -956,7 +956,7 @@
             if (heading) {
                 closelist(); closequote(); closetable();
                 var lvl = heading[1].length;
-                html.push("<h" + lvl + " data-heading-source=\"" + escapeattr(heading[2]) + "\">" + inlinewithcites(heading[2]) + "</h" + lvl + ">");
+                html.push("<h" + lvl + " dataheading-source=\"" + escapeattr(heading[2]) + "\">" + inlinewithcites(heading[2]) + "</h" + lvl + ">");
                 continue;
             }
 
@@ -1058,7 +1058,7 @@
                     chunks.push(linkhtml);
                 }
                 if (!chunks.length) chunks.push('<span class="infoboxwarning">(no citation details, this is likely a mistake)</span>');
-                return '<li id="cite' + idx + '">' + chunks.join(" ") + ' <a class="citeback" href="#" data-cite-target="citeref' + idx + '">↑</a></li>';
+                return '<li id="cite' + idx + '">' + chunks.join(" ") + ' <a class="citeback" href="#" datacite-target="citeref' + idx + '">↑</a></li>';
             }).join("");
             html.push('<section class="citations"><h2>References</h2><ol>' + refs + "</ol></section>");
         }
@@ -1146,7 +1146,7 @@
             if (h.dataset.headingEnhanced === "1") return;
             h.dataset.headingEnhanced = "1";
 
-            var source = h.getAttribute("data-heading-source") || h.textContent || "";
+            var source = h.getAttribute("dataheading-source") || h.textContent || "";
             var slug = ensureuniqueid(slugifyheading(source), used);
             h.id = slug;
 
@@ -1193,11 +1193,11 @@
         enhanceheadings(contentroot); bindexpandableimages(contentroot);
         bindmediafallbacks(contentroot); bindlocaldebuglinktrigger(contentroot);
         if (!localdebug) {updateallarticlelinkstates(contentroot)}
-        var citeanchors = contentroot.querySelectorAll("[data-cite-target]");
+        var citeanchors = contentroot.querySelectorAll("[datacite-target]");
         citeanchors.forEach(function (anchor) {
             anchor.addEventListener("click", function (e) {
                 e.preventDefault();
-                var targetid = anchor.getAttribute("data-cite-target");
+                var targetid = anchor.getAttribute("datacite-target");
                 if (!targetid) return;
                 var target = document.getElementById(targetid);
                 if (!target) return;
