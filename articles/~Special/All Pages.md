@@ -1,0 +1,1 @@
+This pages includes all currently existing articles, including redirects and prefixed ones.

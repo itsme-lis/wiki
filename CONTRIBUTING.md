@@ -25,8 +25,8 @@ See the [Markdown Example](https://ctrhome.github.io/wiki#Special:Preview) page 
 
 Characters like `?` and `:` can’t exist in filenames on Windows, so you should use fullwidth versions (`？` `：`) if needed. The wiki will still attempt to show the normal characters where possible...
 
-You can also use the [Article Playground](https://ctrhome.github.io/wiki#Special:Preview) tab to see how the markdown will look on the wiki. Better yet, go [download this repository](https://github.com/CtRHome/wiki/archive/refs/heads/main.zip) and use the Live Preview extension in VSCode to see it in action more efficiently!
-<sup><sup>Unless you're on a phone, then the Article Playground is your only option...</sup></sup> 
+You can also use the [Visual Editor](https://ctrhome.github.io/wiki#Special:Preview) tab to see how the markdown will look on the wiki. Better yet, go [download this repository](https://github.com/CtRHome/wiki/archive/refs/heads/main.zip) and use the Live Preview extension in VSCode to see it in action more efficiently!
+<sup><sup>Unless you're on a phone, then the Visual Editor is your only option...</sup></sup> 
 
 ----
 
@@ -51,7 +51,7 @@ This might be a doozy, however, here are some clarifications on the layout of th
     <td>
       <code>preview.js</code>
     </td>
-    <td>Exclusively for the <a href="https://ctrhome.github.io/wiki#Special:Preview">Article Playground</a> page</td>
+    <td>Exclusively for the <a href="https://ctrhome.github.io/wiki#Special:Preview">Visual Editor</a> page</td>
   </tr>
   <tr>
     <td>

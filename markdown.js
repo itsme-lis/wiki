@@ -688,7 +688,6 @@
             return "";
         }
     }
-
     function applywikilinkstatus(link, status) {
         link.classList.remove("articlelinkexists", "articlelinkmissing");
         if (status === "exists") link.classList.add("articlelinkexists");
@@ -1096,6 +1095,9 @@
         var prefix = String(parts[0] || "").trim().toLowerCase();
         return reservedprefixes.indexOf(prefix) !== -1;
     }
+    function hasreservedprefix(hashval) {
+        return hasblockededitprefix(hashval);
+    }
     async function fetchfirstexisting(paths) {
         for (var i = 0; i < paths.length; i++) {
             var resp = await fetch(paths[i]);
@@ -1209,6 +1211,26 @@
         var parts = parsedhash();
         var hashval = parts.article || "Main Page";
         maybeNormalizeVisibleHash(parts);
+        var normalizedhash = tonormalwidth(String(hashval || "")).replace(/_/g, " ").replace(/\s+/g, " ").trim();
+        if (normalizedhash.toLowerCase() === "special:all pages") {
+            setpagetitle("Special:All Pages");
+            try {
+                await window.WikiMisc.renderSpecialAllPages({
+                    contentroot: contentroot,
+                    maintitle: maintitle,
+                    tonormalwidth: tonormalwidth,
+                    escapehtml: escapehtml,
+                    escapeattr: escapeattr,
+                    wikilinktohash: wikilinktohash
+                });
+            } catch (_err) {
+                contentroot.innerHTML =
+                    maintitle.replace("$TITLE$", "Special:All Pages") +
+                    '<p class="paragraph">Failed to load the full page list from GitHub right now. Please try again.</p>';
+            }
+            document.dispatchEvent(new CustomEvent("wiki:article-rendered", { detail: { hash: hashval } }));
+            return;
+        }
         var inheritedredirectfrom = "";
         if (pendingredirectnotice && pendingredirectnotice.target === hashval) {
             inheritedredirectfrom = pendingredirectnotice.from || "";
@@ -1218,12 +1240,16 @@
         var res = await fetchfirstexisting(art.candidates);
         setpagetitle(art.hashtitle);
 
-        // 404 text, basically, feel free to adjust
+        // 404 text (not 404.html, just for nonexistent articles), feel free to adjust
         if (!res) {
-            contentroot.innerHTML =
-                maintitle.replace("$TITLE$", escapehtml(art.hashtitle)) +
-                '<p class="paragraph">There is currently no text in this page. ' +
-                'You can contribute by <a href="https://github.com/CtRHome/wiki/new/main/articles?filename=' + escapeattr(art.title) + '.md">creating it</a>!</p>';
+            var isreservedmissing = hasreservedprefix(hashval);
+            var missingtext = isreservedmissing
+                ? '<p class="paragraph">There is currently no text in this page. <br>' +
+                  'Please note that since this is a <b>reserved namespace</b> your edits won\'t be accepted unless you are a repository collaborator!'
+                
+                : '<p class="paragraph">There is currently no text in this page. ' +
+                  'You can contribute by <a href="https://github.com/CtRHome/wiki/new/main/articles?filename=' + escapeattr(art.title) + '.md">creating it</a>!</p>';
+            contentroot.innerHTML = maintitle.replace("$TITLE$", escapehtml(art.hashtitle)) + missingtext;
             document.dispatchEvent(new CustomEvent("wiki:article-rendered", { detail: { hash: hashval } }));
             return;
         }
