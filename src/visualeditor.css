@@ -1152,7 +1152,7 @@
 
 /* ===== Visual Editor overrides (latest) ===== */
 .tabs .tab.vemodetabtop {
-    display: none;
+    display: inline-flex;
 }
 
 .tabs .tab.vemodetabtop.active {

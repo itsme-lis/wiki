@@ -148,14 +148,32 @@
             updateSubmitHref();
         }, 90);
     }
+    function getWidgetAlign(widget) {
+        if (!widget) return "right";
+        var media = widget.querySelector(".embed");
+        if (media) return media.classList.contains("embedleft") ? "left" : "right";
+        var stored = (widget.getAttribute("data-ve-align") || "right").toLowerCase();
+        return stored === "left" ? "left" : "right";
+    }
+    function updateAlignButtonIcon(widget) {
+        if (!widget) return;
+        var img = widget.querySelector('[data-widget-action="toggle-align"] img');
+        if (!img) return;
+        var side = getWidgetAlign(widget);
+        img.setAttribute("src", side === "left" ? "assets/images/icons/right.png" : "assets/images/icons/left.png");
+    }
     function syncWidgetAlignmentHints() {
         if (!canvas) return;
         canvas.querySelectorAll(".vewidget").forEach(function (widget) {
             widget.classList.remove("vealignleft", "vealignright");
             var media = widget.querySelector(".embed");
-            if (!media) return;
-            if (media.classList.contains("embedleft")) widget.classList.add("vealignleft");
-            if (media.classList.contains("embedright")) widget.classList.add("vealignright");
+            if (media) {
+                if (media.classList.contains("embedleft")) widget.classList.add("vealignleft");
+                if (media.classList.contains("embedright")) widget.classList.add("vealignright");
+            } else if ((widget.getAttribute("data-ve-align") || "right") === "left") {
+                widget.classList.add("vealignleft");
+            }
+            updateAlignButtonIcon(widget);
         });
     }
     function updateSubmitHref() {
@@ -254,6 +272,29 @@
         refreshToolbarState();
     }
     function insertInlineCode() {
+        if (!canvas) return;
+        canvas.focus();
+        restoreSelectionRange();
+        var range = getRange();
+        if (range) {
+            var node = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
+            var code = node ? node.closest("code") : null;
+            if (code && !code.closest("pre")) {
+                var textNode = document.createTextNode((code.textContent || "").replace(/\u200b/g, ""));
+                code.replaceWith(textNode);
+                var sel = window.getSelection();
+                if (sel) {
+                    var r = document.createRange();
+                    r.setStartAfter(textNode);
+                    r.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(r);
+                    saveSelectionRange();
+                }
+                scheduleSync();
+                return;
+            }
+        }
         var sel = window.getSelection();
         var selected = sel ? sel.toString() : "";
         if (selected) {
@@ -283,11 +324,11 @@
         scheduleSync();
     }
 
-    function buildWidgetControls(includeAddRow) {
+    function buildWidgetControls(includeAddRow, includeAlign) {
         return '<div class="vewidgethead">' +
             '<button type="button" class="vewidgetbtn" data-widget-action="move-up" title="Move up"><img src="assets/images/icons/up.png"></button>' +
             '<button type="button" class="vewidgetbtn" data-widget-action="move-down" title="Move down"><img src="assets/images/icons/down.png"></button>' +
-            '<button type="button" class="vewidgetbtn" data-widget-action="toggle-align" title="Toggle side"><img src="assets/images/icons/right.png"></button>' +
+            (includeAlign ? '<button type="button" class="vewidgetbtn" data-widget-action="toggle-align" title="Toggle side"><img src="assets/images/icons/left.png"></button>' : "") +
             (includeAddRow ? '<button type="button" class="vewidgetbtn" data-widget-action="add-row"><img src="assets/images/icons/plus.png"></button>' : "") +
             '<button type="button" class="vewidgetbtn" data-widget-action="delete-widget"><img src="assets/images/icons/x.png"></button>' +
             "</div>";
@@ -299,9 +340,9 @@
         if (type === "infobox") {
             var defaultInfoImage = "/assets/images/examplesquare2.png";
             return (
-                '<div class="vewidget vewidgetinfobox" data-vewidget="infobox" contenteditable="false">' +
+                '<div class="vewidget vewidgetinfobox" data-vewidget="infobox" data-ve-align="right" contenteditable="false">' +
                 '<aside class="infobox">' +
-                buildWidgetControls(true) +
+                buildWidgetControls(true, true) +
                 '<h3 contenteditable="true">Infobox title</h3>' +
                 '<div class="veimagewrap">' +
                 '<img class="vewidgetimagepreview" data-image-src="' + defaultInfoImage + '" src="' + defaultInfoImage + '">' +
@@ -317,7 +358,7 @@
             return (
                 '<div class="vewidget vewidgetmedia" data-vewidget="media" contenteditable="false">' +
                 '<figure class="embed embedright">' +
-                buildWidgetControls(false) +
+                buildWidgetControls(false, true) +
                 '<div class="veimagewrap">' +
                 '<img class="vewidgetmediapreview" data-image-src="' + defaultMediaImage + '" src="' + defaultMediaImage + '">' +
                 buildImagePathField(defaultMediaImage) +
@@ -331,7 +372,7 @@
             return (
                 '<div class="vewidget vewidgetmsg" data-vewidget="msg" contenteditable="false">' +
                 '<section class="msg">' +
-                buildWidgetControls(false) +
+                buildWidgetControls(false, false) +
                 '<img class="msgicon" src="assets/images/msg/hello.gif">' +
                 '<div class="msgcontent">' +
                 '<p class="msglabel"><strong contenteditable="true">Message:</strong></p>' +
@@ -343,7 +384,7 @@
         return (
             '<div class="vewidget vewidgetcard" data-vewidget="' + type + '" contenteditable="false">' +
             '<section class="card card' + type + '">' +
-            buildWidgetControls(false) +
+            buildWidgetControls(false, false) +
             '<h3><img class="cardicon" src="assets/images/icons/' + type + '.png"> <span contenteditable="true">Card title</span></h3>' +
             '<p contenteditable="true">Card text</p>' +
             "</section>" +
@@ -561,6 +602,36 @@
         if (!panel) return;
         panel.classList.remove("open");
     }
+    function applyWidgetImagePath(widget, pathField) {
+        if (!widget || !pathField) return;
+        var img = widget.querySelector(".vewidgetimagepreview, .vewidgetmediapreview");
+        if (!img) return;
+        var value = String(pathField.value || "").trim();
+        if (!value) return;
+        img.setAttribute("data-image-src", value);
+        img.setAttribute("src", value);
+        img.onerror = function () {
+            img.setAttribute("src", "assets/images/badpath.png");
+        };
+        img.onload = function () {
+            img.onerror = null;
+        };
+        scheduleSync();
+    }
+    function updateMsgIcon(widget) {
+        if (!widget) return;
+        var strong = widget.querySelector(".msglabel strong");
+        var icon = widget.querySelector(".msgicon");
+        if (!strong || !icon) return;
+        var kind = String(strong.textContent || "").replace(":", "").trim().toLowerCase() || "hello";
+        kind = kind.replace(/[^a-z0-9_-]/g, "");
+        var next = "assets/images/msg/" + kind + ".png";
+        if (kind === "hello" || kind === "message") next = "assets/images/msg/hello.gif";
+        icon.setAttribute("src", next);
+        icon.onerror = function () {
+            icon.setAttribute("src", "assets/images/msg/badpath.png");
+        };
+    }
 
     function inlineToMd(node) {
         if (!node) return "";
@@ -734,11 +805,14 @@
                     if (action === "toggle-align") {
                         var media = widget.querySelector(".embed");
                         if (media) {
-                            media.classList.toggle("embedleft");
-                            media.classList.toggle("embedright");
+                            var toLeft = !media.classList.contains("embedleft");
+                            media.classList.toggle("embedleft", toLeft);
+                            media.classList.toggle("embedright", !toLeft);
                         } else {
-                            widget.classList.toggle("vealignleft");
+                            var current = (widget.getAttribute("data-ve-align") || "right") === "left" ? "left" : "right";
+                            widget.setAttribute("data-ve-align", current === "left" ? "right" : "left");
                         }
+                        syncWidgetAlignmentHints();
                     }
                     if (action === "move-up" || action === "move-down") {
                         var sib = action === "move-up" ? widget.previousElementSibling : widget.nextElementSibling;
@@ -756,18 +830,25 @@
                 return;
             }
         });
-        root.addEventListener("input", function (e) {
+        root.addEventListener("blur", function (e) {
+            var pathField = e.target.closest(".veimagepathinput");
+            if (pathField) {
+                applyWidgetImagePath(pathField.closest(".vewidget"), pathField);
+                return;
+            }
+            var msgStrong = e.target.closest(".vewidgetmsg .msglabel strong");
+            if (msgStrong) {
+                updateMsgIcon(msgStrong.closest(".vewidget"));
+                scheduleSync();
+            }
+        }, true);
+        root.addEventListener("keydown", function (e) {
             var pathField = e.target.closest(".veimagepathinput");
             if (!pathField) return;
-            var widget = pathField.closest(".vewidget");
-            if (!widget) return;
-            var img = widget.querySelector(".vewidgetimagepreview, .vewidgetmediapreview");
-            if (!img) return;
-            var value = String(pathField.value || "").trim();
-            if (!value) return;
-            img.setAttribute("data-image-src", value);
-            img.setAttribute("src", value);
-            scheduleSync();
+            if (e.key === "Enter") {
+                e.preventDefault();
+                pathField.blur();
+            }
         });
 
         root.querySelectorAll(".veaction").forEach(function (button) {
@@ -854,8 +935,10 @@
         canvas.querySelectorAll(".vewidgetinfobox .veiboxrows").forEach(function (rows) {
             if (!rows.children.length) addInfoboxRow(rows);
         });
+        canvas.querySelectorAll(".vewidgetmsg").forEach(updateMsgIcon);
         refreshToolbarState();
         setViewMode("edit");
+        syncWidgetAlignmentHints();
         updateSubmitHref();
     }
 
