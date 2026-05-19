@@ -95,6 +95,18 @@
 
     function normalizeInlineCodeNodes(canvas) {
         if (!canvas) return;
+        // Empty inline <code> elements come in two flavours:
+        //   1. just-inserted by the monospace button (carries data-vefresh="1")
+        //      - keep with a ZWSP so the caret stays inside and the user can
+        //        start typing into it.
+        //   2. emptied by the user deleting all of its previous content
+        //      - remove entirely so the styled stub doesn't linger (which
+        //        used to softlock the first line when the entire line was
+        //        monospace and got cleared).
+        // Inside <pre> blocks, we always keep a ZWSP placeholder regardless,
+        // since the <code> there represents the block's body, not a stub.
+        var sel = window.getSelection();
+        var caretNode = (sel && sel.rangeCount) ? sel.getRangeAt(0).startContainer : null;
         canvas.querySelectorAll("code").forEach(function (node) {
             if (node.closest("pre")) {
                 var blockValue = (node.textContent || "").replace(/​/g, "");
@@ -102,7 +114,28 @@
                 return;
             }
             var value = (node.textContent || "").replace(/​/g, "");
-            if (!value.length) node.textContent = "​";
+            if (value.length) {
+                // It has real content - it's no longer "fresh"; the next time
+                // it gets emptied we want to remove it.
+                if (node.hasAttribute("data-vefresh")) node.removeAttribute("data-vefresh");
+                return;
+            }
+            if (node.hasAttribute("data-vefresh")) {
+                if (node.textContent !== "​") node.textContent = "​";
+                return;
+            }
+            // Stub: remove. Move the caret outside first so deletion doesn't
+            // leave the selection pointing at a detached node.
+            if (caretNode && (node === caretNode || node.contains(caretNode)) && sel) {
+                try {
+                    var r = document.createRange();
+                    r.setStartBefore(node);
+                    r.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(r);
+                } catch (_e) {}
+            }
+            node.remove();
         });
     }
 

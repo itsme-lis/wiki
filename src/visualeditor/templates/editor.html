@@ -1,5 +1,4 @@
 <section class="visualeditor">
-<h1 class="title vetitleheading" contenteditable="true" spellcheck="false"></h1>
 
 <div class="vetoolbar">
     <div class="vemainbuttons">
@@ -11,18 +10,15 @@
             <button class="vesubbtn veaction" data-action="strike" title="Strikethrough"><img src="assets/images/icons/editor/strikethrough.png"></button>
         </div>
 
-        <div class="vecompound" data-compound="heading-a">
-            <button class="vesubbtn veheading-option" data-heading="h1" title="Heading 1"><img src="assets/images/icons/editor/title.png"></button>
-            <button class="vesubbtn veheading-option" data-heading="h2" title="Heading 2"><img src="assets/images/icons/editor/subtitle.png"></button>
-            <button class="vesubbtn veheading-option" data-heading="h3" title="Heading 3"><img src="assets/images/icons/editor/h3.png"></button>
-            <button class="vesubbtn veheading-option" data-heading="h4" title="Heading 4"><img src="assets/images/icons/editor/h4.png"></button>
-        </div>
-
-        <div class="vecompound" data-compound="heading-b">
-            <button class="vesubbtn veheading-option" data-heading="h5" title="Heading 5"><img src="assets/images/icons/editor/h5.png"></button>
-            <button class="vesubbtn veheading-option" data-heading="h6" title="Heading 6"><img src="assets/images/icons/editor/h6.png"></button>
-            <button class="vesubbtn veheading-option isactive" data-heading="text" title="Normal text"><img src="assets/images/icons/editor/text.png"></button>
-            <button class="vesubbtn veheading-option" data-heading="tiny" title="Tiny text"><img src="assets/images/icons/editor/tiny.png"></button>
+        <div class="vecompound vecompoundwide" data-compound="heading">
+            <button class="vesubbtn veheading-option" data-heading="h1" title="Title (h1)"><img src="assets/images/icons/editor/title.png"></button>
+            <button class="vesubbtn veheading-option" data-heading="h2" title="Subtitle (h2)"><img src="assets/images/icons/editor/subtitle.png"></button>
+            <button class="vesubbtn veheading-option" data-heading="h3" title="h3"><img src="assets/images/icons/editor/h3.png"></button>
+            <button class="vesubbtn veheading-option" data-heading="h4" title="h4"><img src="assets/images/icons/editor/h4.png"></button>
+            <button class="vesubbtn veheading-option" data-heading="h5" title="h5"><img src="assets/images/icons/editor/h5.png"></button>
+            <button class="vesubbtn veheading-option" data-heading="h6" title="h6 (smaller than tiny, but opaque)"><img src="assets/images/icons/editor/h6.png"></button>
+            <button class="vesubbtn veheading-option isactive" data-heading="text" title="Normal"><img src="assets/images/icons/editor/text.png"></button>
+            <button class="vesubbtn veheading-option" data-heading="tiny" title="Tiny"><img src="assets/images/icons/editor/tiny.png"></button>
         </div>
 
         <div class="vecompound" data-compound="references">
@@ -32,23 +28,32 @@
             <button class="vesubbtn veciteoption" data-cite="needed" title="Citation needed"><img src="assets/images/icons/editor/nocite.png"></button>
         </div>
 
+        <div class="vecompound" data-compound="other">
+            <button class="vesuvbtn veaction" data-action="list" title="List"><img src="assets/images/icons/editor/list.png"></button>
+            <button class="vesubbtn veaction" data-action="monospace" title="Monospace"><img src="assets/images/icons/editor/monospace.png"></button>
+        </div>
+        
+    </div>
+
+    <div class="vemainbuttons">
+
+        <button class="veiconbtn veaction" data-action="codeblock" title="Code block"><img src="assets/images/icons/editor/code.png"></button>
+
         <div class="vecompound" data-compound="msgboxes">
             <button class="veiconbtn veaction" data-action="info" title="Info card"><img src="assets/images/icons/editor/info.png"></button>
             <button class="veiconbtn veaction" data-action="warning" title="Warning card"><img src="assets/images/icons/editor/warning.png"></button>
             <button class="veiconbtn veaction" data-action="danger" title="Danger card"><img src="assets/images/icons/editor/danger.png"></button>
         </div>
 
-        <button class="veiconbtn veaction" data-action="list" title="List"><img src="assets/images/icons/editor/list.png"></button>
-        <button class="veiconbtn veaction" data-action="monospace" title="Monospace"><img src="assets/images/icons/editor/monospace.png"></button>
-        <button class="veiconbtn veaction" data-action="codeblock" title="Code block"><img src="assets/images/icons/editor/code.png"></button>
-
         <button class="veiconbtn veaction" data-action="infobox" title="Infobox"><img src="assets/images/icons/editor/infobox.png"></button>
         <button class="veiconbtn veaction" data-action="media" title="Media"><img src="assets/images/icons/editor/media.png"></button>
         <button class="veiconbtn veaction" data-action="msg" title="Message"><img src="assets/images/icons/editor/msg.png"></button>
 
     </div>
-    <button type="button" class="veiconbtn vetoolbarreset" title="Reset editor">Reset</button>
+
 </div>
+
+<h1 class="title vetitleheading" contenteditable="true" spellcheck="false"></h1>
 
 <div class="velinkpanel">
     <input class="velink-display" placeholder="Display text">
@@ -66,6 +71,7 @@
     <div class="vecanvas" contenteditable="true" spellcheck="false"></div>
     <div class="vepreviewpanel"></div>
     <pre class="verawpanel"><code class="language-md"></code></pre>
+    <button type="button" class="veiconbtn vetoolbarreset" title="Reset editor">Reset</button>
 </div>
 
 </section>

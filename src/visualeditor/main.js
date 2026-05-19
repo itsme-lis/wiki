@@ -35,7 +35,7 @@
         localStorage.setItem(titlekey, String(value || "Edit Me!").trim() || "Edit Me!");
     }
     function getstoredhtml() {
-        return localStorage.getItem(bodykey) || "<p>Start writing your article here...</p>";
+        return localStorage.getItem(bodykey) || "<p>Hello world!</p>";
     }
     function setstoredhtml(value) {
         localStorage.setItem(bodykey, value || "<p></p>");
@@ -273,6 +273,9 @@
     function applyHeading(level) {
         if (!canvas) return;
         canvas.focus();
+        // Clicking the already-active heading button reverts to plain text,
+        // so the same button works as both apply and remove.
+        if (level === activeHeading && level !== "text") level = "text";
         clearBlockFormatting();
         if (level === "text") {
             activeHeading = "text";
@@ -326,14 +329,24 @@
         refreshToolbarState();
     }
     function findAdjacentInlineCode(range) {
-        // Returns a <code> element the caret sits inside, immediately before,
-        // or immediately after — so a second monospace press can unwrap it.
-        var c = range.startContainer;
-        var node = c.nodeType === Node.ELEMENT_NODE ? c : c.parentElement;
-        var inside = node ? node.closest("code") : null;
-        if (inside && !inside.closest("pre")) return inside;
+        // Returns a <code> element the caret sits inside (or whose contents
+        // the selection spans/touches), so a second monospace press unwraps
+        // it. Checks start, end, and common ancestor of the range, plus
+        // immediate siblings when the range is collapsed.
+        function ancestorCode(node) {
+            if (!node) return null;
+            var el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+            if (!el) return null;
+            var code = el.closest("code");
+            return (code && !code.closest("pre")) ? code : null;
+        }
+        var hit = ancestorCode(range.startContainer)
+            || ancestorCode(range.endContainer)
+            || ancestorCode(range.commonAncestorContainer);
+        if (hit) return hit;
 
         if (!range.collapsed) return null;
+        var c = range.startContainer;
         var off = range.startOffset;
         var probes = [];
         if (c.nodeType === Node.ELEMENT_NODE) {
@@ -374,6 +387,7 @@
         var selected = sel ? sel.toString() : "";
         var codeEl = document.createElement("code");
         codeEl.textContent = selected || "​";
+        if (!selected) codeEl.setAttribute("data-vefresh", "1");
         if (selected && range && !range.collapsed) {
             range.deleteContents();
             range.insertNode(codeEl);
@@ -394,54 +408,134 @@
         }
         scheduleSync();
     }
+    // 20 common Prism languages presented in the per-block language picker.
+    var CODE_LANGS = [
+        ["txt", "Plain text"],
+        ["js", "JavaScript"],
+        ["ts", "TypeScript"],
+        ["html", "HTML"],
+        ["css", "CSS"],
+        ["json", "JSON"],
+        ["md", "Markdown"],
+        ["py", "Python"],
+        ["java", "Java"],
+        ["c", "C"],
+        ["cpp", "C++"],
+        ["csharp", "C#"],
+        ["php", "PHP"],
+        ["ruby", "Ruby"],
+        ["go", "Go"],
+        ["rust", "Rust"],
+        ["lua", "Lua"],
+        ["bash", "Bash"],
+        ["sql", "SQL"],
+        ["yaml", "YAML"]
+    ];
+    function buildLangBarHtml(currentLang) {
+        var opts = CODE_LANGS.map(function (pair) {
+            var s = pair[0] === currentLang ? " selected" : "";
+            return '<option value="' + esc(pair[0]) + '"' + s + '>' + esc(pair[1]) + '</option>';
+        }).join("");
+        return '<span class="vecodelangbar" contenteditable="false">' +
+            '<select class="vecodelangselect">' + opts + '</select>' +
+            '<small class="vecodehint">Ctrl+Enter to exit</small>' +
+            '</span>';
+    }
     function insertCodeBlock() {
         if (!canvas) return;
         canvas.focus();
         restoreSelectionRange();
-        var lang = (window.prompt("Code language (e.g. js, py, txt):", "txt") || "txt").trim().toLowerCase();
-        lang = lang.replace(/[^a-z0-9_+-]/g, "") || "txt";
-        // After prompt(), restore the saved range — the dialog can drop focus.
-        restoreSelectionRange();
-        var range = getRange();
+        var lang = "txt";
         var sel = window.getSelection();
         var selected = sel ? (sel.toString() || "") : "";
-
-        var pre = document.createElement("pre");
+        var content = selected ? esc(selected) : "​";
+        // Use a marker id so we can locate the just-inserted block reliably
+        // and place the caret inside its <code>. execCommand(insertHTML) routes
+        // through the browser's undo stack so Ctrl+Z works on this insertion.
+        var markerId = "veCodeBlock_" + Date.now() + "_" + Math.floor(Math.random() * 1e6);
+        var html = '<pre id="' + markerId + '" class="codeblock language-' + lang + '" data-code-lang="' + lang + '">' +
+            buildLangBarHtml(lang) +
+            '<code class="language-' + lang + '">' + content + '</code>' +
+            '</pre><p><br></p>';
+        document.execCommand("insertHTML", false, html);
+        var pre = document.getElementById(markerId);
+        if (pre) {
+            pre.removeAttribute("id");
+            var code = pre.querySelector("code");
+            if (code && sel) {
+                var r = document.createRange();
+                r.selectNodeContents(code);
+                r.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(r);
+                saveSelectionRange();
+            }
+        }
+        scheduleSync();
+    }
+    // Ctrl+Enter inside a code block moves the caret to the next paragraph
+    // (creating one if needed), per the hint shown next to the language picker.
+    function handleCodeBlockExit(e) {
+        if (e.key !== "Enter" || !(e.ctrlKey || e.metaKey)) return;
+        var sel = window.getSelection();
+        if (!sel || !sel.rangeCount) return;
+        var n = sel.getRangeAt(0).startContainer;
+        var el = n.nodeType === Node.ELEMENT_NODE ? n : n.parentElement;
+        var pre = el ? el.closest("pre.codeblock") : null;
+        if (!pre || !canvas.contains(pre)) return;
+        e.preventDefault();
+        var next = pre.nextElementSibling;
+        if (!next || next.tagName.toLowerCase() !== "p") {
+            next = document.createElement("p");
+            next.innerHTML = "<br>";
+            pre.parentNode.insertBefore(next, pre.nextSibling);
+        }
+        var r = document.createRange();
+        r.setStart(next, 0);
+        r.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(r);
+        saveSelectionRange();
+        scheduleSync();
+    }
+    // Backspace at the very start of an (effectively empty) code block deletes
+    // the whole block. Once there's real content, Backspace works normally.
+    function handleCodeBlockBackspace(e) {
+        if (e.key !== "Backspace") return;
+        var sel = window.getSelection();
+        if (!sel || !sel.rangeCount) return;
+        var r = sel.getRangeAt(0);
+        if (!r.collapsed || r.startOffset !== 0) return;
+        var n = r.startContainer;
+        var el = n.nodeType === Node.ELEMENT_NODE ? n : n.parentElement;
+        var code = el ? el.closest("pre.codeblock > code") : null;
+        if (!code || !canvas.contains(code)) return;
+        var pre = code.parentNode;
+        var raw = (code.textContent || "").replace(/​/g, "");
+        if (raw.length > 0) return;  // there's content - let default delete handle it
+        var replacement = document.createElement("p");
+        replacement.innerHTML = "<br>";
+        pre.parentNode.replaceChild(replacement, pre);
+        var rr = document.createRange();
+        rr.setStart(replacement, 0);
+        rr.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(rr);
+        saveSelectionRange();
+        e.preventDefault();
+        scheduleSync();
+    }
+    // Change handler for the per-block language picker (delegated on canvas).
+    function handleCodeBlockLangChange(e) {
+        var picker = e.target && e.target.closest && e.target.closest(".vecodelangselect");
+        if (!picker) return;
+        var pre = picker.closest("pre.codeblock");
+        if (!pre) return;
+        var lang = picker.value || "txt";
         pre.setAttribute("data-code-lang", lang);
-        var code = document.createElement("code");
-        code.textContent = selected || "​";
-        pre.appendChild(code);
-        var trailer = document.createElement("p");
-        trailer.innerHTML = "<br>";
-
-        // Insert at the boundary of whatever block holds the caret. execCommand
-        // doesn't reliably accept <pre> across browsers, so do it ourselves.
-        var anchor = null;
-        if (range) {
-            var n = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
-            anchor = n ? n.closest("h1,h2,h3,h4,h5,h6,p,blockquote") : null;
-        }
-        if (selected && range && !range.collapsed) {
-            try { range.deleteContents(); } catch (_e) {}
-        }
-        if (anchor && canvas.contains(anchor) && anchor.parentNode) {
-            anchor.parentNode.insertBefore(pre, anchor.nextSibling);
-            anchor.parentNode.insertBefore(trailer, pre.nextSibling);
-        } else {
-            canvas.appendChild(pre);
-            canvas.appendChild(trailer);
-        }
-
-        // Park the caret inside the code block ready to type.
-        var sel2 = window.getSelection();
-        if (sel2) {
-            var r = document.createRange();
-            r.selectNodeContents(code);
-            r.collapse(false);
-            sel2.removeAllRanges();
-            sel2.addRange(r);
-            saveSelectionRange();
-        }
+        pre.className = "codeblock language-" + lang;
+        var code = pre.querySelector("code");
+        if (code) code.className = "language-" + lang;
         scheduleSync();
     }
     function toggleList() {
@@ -449,34 +543,164 @@
         canvas.focus();
         restoreSelectionRange();
         document.execCommand("insertUnorderedList", false, null);
+        // execCommand creates a plain <ul>; tag it with .articlelist so the
+        // wiki's custom-bullet styling (bullet.png) applies inside the canvas
+        // exactly like in the rendered article.
+        var r = getRange();
+        if (r) {
+            var n = r.startContainer.nodeType === 1 ? r.startContainer : r.startContainer.parentElement;
+            var ul = n ? n.closest("ul") : null;
+            if (ul && !ul.classList.contains("articlelist")) ul.classList.add("articlelist");
+        }
         saveSelectionRange();
+        scheduleSync();
+    }
+    // Backspace at the very start of a <li>: first press outdents that one
+    // line into a <p>, leaving the rest of the list intact. The <p> takes
+    // the li's position (above the list if it was the first item, after if
+    // last, or splitting the list in two for items in the middle), so the
+    // caret stays on the same visual row instead of jumping above the list.
+    function handleListOutdent(e) {
+        if (e.key !== "Backspace") return;
+        var sel = window.getSelection();
+        if (!sel || !sel.rangeCount) return;
+        var r = sel.getRangeAt(0);
+        if (!r.collapsed || r.startOffset !== 0) return;
+        var c = r.startContainer;
+        var ref = c.nodeType === Node.ELEMENT_NODE ? c : c.parentElement;
+        var li = ref ? ref.closest("li") : null;
+        if (!li || !canvas.contains(li)) return;
+        // Must actually be at the start of the li (not mid-content).
+        var first = li;
+        while (first.firstChild) first = first.firstChild;
+        if (c !== first && !(c === li && r.startOffset === 0)) return;
+        var ul = li.parentNode;
+        if (!ul || (ul.tagName !== "UL" && ul.tagName !== "OL")) return;
+
+        var parent = ul.parentNode;
+        var siblings = Array.prototype.slice.call(ul.children);
+        var idx = siblings.indexOf(li);
+        var prevLis = siblings.slice(0, idx);
+        var nextLis = siblings.slice(idx + 1);
+
+        var p = document.createElement("p");
+        while (li.firstChild) p.appendChild(li.firstChild);
+        if (!p.firstChild) p.appendChild(document.createElement("br"));
+
+        if (prevLis.length === 0 && nextLis.length === 0) {
+            parent.replaceChild(p, ul);
+        } else if (prevLis.length === 0) {
+            // First item: <p> goes above the (now shorter) list.
+            parent.insertBefore(p, ul);
+            li.remove();
+        } else if (nextLis.length === 0) {
+            // Last item: <p> goes below the list.
+            parent.insertBefore(p, ul.nextSibling);
+            li.remove();
+        } else {
+            // Middle item: split the <ul> into two, <p> sits between them.
+            var ulAfter = document.createElement(ul.tagName.toLowerCase());
+            if (ul.className) ulAfter.className = ul.className;
+            nextLis.forEach(function (n) { ulAfter.appendChild(n); });
+            parent.insertBefore(p, ul.nextSibling);
+            parent.insertBefore(ulAfter, p.nextSibling);
+            li.remove();
+        }
+
+        var newRange = document.createRange();
+        newRange.setStart(p.firstChild || p, 0);
+        newRange.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+        saveSelectionRange();
+        e.preventDefault();
         scheduleSync();
     }
 
     /*//////////////////////////////////////////////////////////////////////*/
     // Citation insertion (lives here because it needs selection state)
 
+    function citationInsertionRange() {
+        // Use whatever the user has selected as the insertion point, but
+        // collapsed to the END of the selection so existing text is never
+        // replaced. Falls back to the end of the canvas when no caret is set.
+        var range = getRange();
+        if (range && canvas.contains(range.commonAncestorContainer)) {
+            var clone = range.cloneRange();
+            clone.collapse(false);
+            return clone;
+        }
+        var fallback = document.createRange();
+        if (canvas.lastChild) {
+            fallback.selectNodeContents(canvas.lastChild);
+        } else {
+            fallback.selectNodeContents(canvas);
+        }
+        fallback.collapse(false);
+        return fallback;
+    }
+    function placeCaretAfter(node) {
+        var sel = window.getSelection();
+        if (!sel) return;
+        var r = document.createRange();
+        r.setStartAfter(node);
+        r.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(r);
+        saveSelectionRange();
+    }
     function addCitation(kind) {
         if (!canvas) return;
+        canvas.focus();
+        restoreSelectionRange();
+
+        // Build the inline marker first as a real DOM node so the browser
+        // can't quietly wrap it in a new block via execCommand.
+        var sup;
         if (kind === "needed") {
-            insertAtCursor('<sup class="citationneeded" data-veciteneeded="1" contenteditable="false"><em>(source?)</em></sup>');
-            return;
+            sup = document.createElement("sup");
+            sup.className = "citationneeded";
+            sup.setAttribute("data-veciteneeded", "1");
+            sup.setAttribute("contenteditable", "false");
+            sup.innerHTML = "<em>(source?)</em>";
+        } else {
+            // Make sure the references block exists BEFORE we compute the next
+            // citation id so the id space stays consistent.
+            W.ensureReferences(canvas, true);
+            var id = W.getNextCitationId(canvas);
+            sup = document.createElement("sup");
+            sup.className = "citeref";
+            sup.setAttribute("data-veciteid", String(id));
+            sup.setAttribute("contenteditable", "false");
+            sup.textContent = "[^" + id + "]";
+
+            var list = canvas.querySelector(".vereferences ol");
+            if (list) {
+                var li = document.createElement("li");
+                li.className = "veciteentry";
+                li.setAttribute("data-veciteid", String(id));
+                var desc = (kind === "link") ? "" : "description";
+                var link = (kind === "desc") ? "" : "https://example.com";
+                li.innerHTML =
+                    '<span class="veciteindex">[' + id + "]</span> " +
+                    '<span class="vecitedesc" contenteditable="true">' + esc(desc) + "</span>" +
+                    '<span class="vecitesep"> | </span>' +
+                    '<span class="vecitelink" contenteditable="true">' + esc(link) + "</span>";
+                list.appendChild(li);
+            }
         }
-        W.ensureReferences(canvas, true);
-        var id = W.getNextCitationId(canvas);
-        insertAtCursor('<sup class="citeref" data-veciteid="' + id + '" contenteditable="false">[^' + id + "]</sup>");
-        var list = canvas.querySelector(".vereferences ol");
-        var li = document.createElement("li");
-        li.className = "veciteentry";
-        li.setAttribute("data-veciteid", String(id));
-        var desc = kind === "link" ? "" : "description";
-        var link = kind === "desc" ? "" : "https://example.com";
-        li.innerHTML =
-            '<span class="veciteindex">[' + id + "]</span> " +
-            '<span class="vecitedesc" contenteditable="true">' + esc(desc) + "</span>" +
-            '<span class="vecitesep"> | </span>' +
-            '<span class="vecitelink" contenteditable="true">' + esc(link) + "</span>";
-        list.appendChild(li);
+
+        var target = citationInsertionRange();
+        try {
+            target.insertNode(sup);
+        } catch (_err) {
+            // Range can become invalid (e.g., if its startContainer was
+            // removed by ensureReferences). Land in the last paragraph or
+            // append directly to the canvas as a last resort.
+            var fallback = canvas.querySelector("p:not(.vereferences p):last-of-type") || canvas;
+            fallback.appendChild(sup);
+        }
+        placeCaretAfter(sup);
         scheduleSync();
     }
 
@@ -554,6 +778,21 @@
     /*//////////////////////////////////////////////////////////////////////*/
     // Toolbar state, clipboard, mode switching, reset
 
+    function detectActiveHeading() {
+        if (!canvas) return "text";
+        var r = getRange();
+        if (!r) return activeHeading;
+        var c = r.startContainer;
+        if (!canvas.contains(c)) return activeHeading;
+        var node = c.nodeType === Node.ELEMENT_NODE ? c : c.parentElement;
+        if (!node) return "text";
+        var block = node.closest("h1,h2,h3,h4,h5,h6,p,blockquote,pre");
+        if (!block || !canvas.contains(block)) return "text";
+        var tag = block.tagName.toLowerCase();
+        if (/^h[1-6]$/.test(tag)) return tag;
+        if (tag === "p") return block.classList.contains("smalltext") ? "tiny" : "text";
+        return "text";
+    }
     function refreshToolbarState() {
         if (!root) return;
         var stateMap = [
@@ -569,6 +808,8 @@
             try { isOn = document.queryCommandState(pair[1]); } catch (_err) {}
             btn.classList.toggle("isactive", !!isOn);
         });
+        // Reflect the actual block under the caret on the heading buttons.
+        activeHeading = detectActiveHeading();
         root.querySelectorAll(".veheading-option").forEach(function (b) { b.classList.remove("isactive"); });
         var active = root.querySelector('.veheading-option[data-heading="' + activeHeading + '"]');
         if (active) active.classList.add("isactive");
@@ -631,7 +872,7 @@
         localStorage.removeItem(bodykey);
         localStorage.removeItem(titlekey);
         titleheading.textContent = "Edit Me!";
-        canvas.innerHTML = "<p>Start writing your article here...</p>";
+        canvas.innerHTML = "<p>Hello world!</p>";
         savedRange = null;
         activeHeading = "text";
         setViewMode("edit");
@@ -736,6 +977,28 @@
         titleheading.addEventListener("input", function () {
             settitle(titleheading.textContent);
             updateSubmitHref();
+            // When the title is fully emptied, contenteditable headings can
+            // collapse to zero height in some browsers and stop accepting
+            // further keystrokes - keep a placeholder so it stays usable.
+            if (!titleheading.textContent && !titleheading.querySelector("br")) {
+                titleheading.innerHTML = "<br>";
+                var sel = window.getSelection();
+                if (sel) {
+                    var r = document.createRange();
+                    r.selectNodeContents(titleheading);
+                    r.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(r);
+                }
+            }
+        });
+        // Defensive: clicking back into the title should always make it
+        // editable. If something elsewhere (a stale render, the IDE, etc.)
+        // ever flips contenteditable off, restore it on focus.
+        titleheading.addEventListener("focus", function () {
+            if (titleheading.getAttribute("contenteditable") !== "true") {
+                titleheading.setAttribute("contenteditable", "true");
+            }
         });
         canvas.addEventListener("click", function (e) {
             var anchor = e.target.closest("a");
@@ -768,6 +1031,10 @@
             insertPlainTextAtCursor(text || "");
         });
         canvas.addEventListener("keydown", handleCiteDeleteKey);
+        canvas.addEventListener("keydown", handleListOutdent);
+        canvas.addEventListener("keydown", handleCodeBlockExit);
+        canvas.addEventListener("keydown", handleCodeBlockBackspace);
+        canvas.addEventListener("change", handleCodeBlockLangChange);
         document.addEventListener("selectionchange", function () {
             if (!isactive || !root) return;
             refreshToolbarState();
@@ -925,6 +1192,14 @@
             if (!rows.children.length) W.addInfoboxRow(rows);
         });
         canvas.querySelectorAll(".vewidgetmsg").forEach(W.updateMsgIcon);
+        // Lift the Reset button out of .visualeditor so its absolute positioning
+        // resolves against .content (the editor itself is position:relative for
+        // the link panel, which would otherwise capture the button).
+        var resetBtn = root.querySelector(".vetoolbarreset");
+        if (resetBtn) {
+            var contentEl = root.parentNode;
+            if (contentEl) contentEl.appendChild(resetBtn);
+        }
         refreshToolbarState();
         setViewMode("edit");
         W.syncWidgetState(canvas);

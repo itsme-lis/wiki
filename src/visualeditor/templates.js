@@ -13,10 +13,13 @@
     var cache = {};
     var loadPromise = null;
 
+    // Cache-buster regenerated on every page load so iterating on the editor
+    // markup doesn't get stuck on a stale template the browser cached.
+    var bust = "?v=" + Date.now();
     function load() {
         if (loadPromise) return loadPromise;
         loadPromise = Promise.all(TEMPLATE_NAMES.map(function (name) {
-            return fetch(TEMPLATE_DIR + name + ".html").then(function (r) {
+            return fetch(TEMPLATE_DIR + name + ".html" + bust, { cache: "no-store" }).then(function (r) {
                 if (!r.ok) throw new Error("Failed to load template: " + name);
                 return r.text();
             }).then(function (txt) {

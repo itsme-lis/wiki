@@ -13,7 +13,7 @@
     background: transparent; opacity: 0.75;
     display: inline-flex;
     align-items: center; justify-content: center;
-    cursor: url("assets/static/cursors/link.cur"), default !important;
+    cursor: url("../assets/static/cursors/link.cur"), default !important;
 }
 .copyheadinglink:hover {opacity: 1}
 .copyheadinglink img {
@@ -23,7 +23,7 @@
 
 .content pre, .content code, .paragraph, .quote,
 .articlelist li, .markdowntable th, .markdowntable td {
-    cursor: url("assets/static/cursors/idle.cur"), default !important;
+    cursor: url("../assets/static/cursors/idle.cur"), default !important;
 }
 
 /*//////////////////////////////////////////////////////////////////////*/
@@ -69,7 +69,15 @@ ol * {
 }
 .citeback {
     opacity: 0.8;
-    margin-left: 6px;
+    margin-left: 2px;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+}
+.citeback img {
+    width: 0.9em;
+    height: 0.9em;
+    object-fit: contain;
 }
 
 /*//////////////////////////////////////////////////////////////////////*/
@@ -103,7 +111,7 @@ ol * {
 .articlelist li::before {
     content: ""; position: absolute;
     left: 0; width: 14px; height: 14px;
-    background: url("assets/images/icons/bullet.png") no-repeat center / contain;
+    background: url("../assets/images/icons/bullet.png") no-repeat center / contain;
 }
 
 .content h2, .content h3, .content h4 {

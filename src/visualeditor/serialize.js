@@ -6,6 +6,20 @@
         if (node.nodeType === Node.TEXT_NODE) return node.nodeValue || "";
         if (node.nodeType !== Node.ELEMENT_NODE) return "";
         var tag = node.tagName.toLowerCase();
+        // Lists may end up nested inside a <p> (some browsers tuck the <ul>
+        // created by execCommand("insertUnorderedList") there), so handle them
+        // here too. Emit items joined by single newlines so the wiki markdown
+        // parser keeps them in one <ul> (a blank line would split them).
+        if (tag === "ul" || tag === "ol") {
+            var items = [];
+            for (var k = 0; k < node.children.length; k++) {
+                var liChild = node.children[k];
+                if (liChild.tagName && liChild.tagName.toLowerCase() === "li") {
+                    items.push("- " + inlineToMd(liChild).trim());
+                }
+            }
+            return items.length ? ("\n" + items.join("\n") + "\n") : "";
+        }
         var text = "";
         for (var i = 0; i < node.childNodes.length; i++) text += inlineToMd(node.childNodes[i]);
         if (tag === "strong" || tag === "b") return "**" + text + "**";
@@ -29,18 +43,19 @@
         return text;
     }
 
-    // Convert an editable element's children to markdown text — preserves
-    // inline formatting (bold, italic, links, etc.) so widget fields can keep
-    // their formatting when round-tripped to raw markdown.
+    // Convert an editable element's children to markdown text - preserves
+    // inline formatting (bold, italic, links, etc.) AND line breaks. Breaks
+    // round-trip as literal <br> tokens which parseinline preserves in the
+    // rendered preview/output (it un-escapes <br> after escaping the rest).
     function editableMd(el) {
         if (!el) return "";
         var s = "";
         for (var i = 0; i < el.childNodes.length; i++) {
             var child = el.childNodes[i];
-            if (child.nodeType === Node.ELEMENT_NODE && child.tagName.toLowerCase() === "br") s += " ";
+            if (child.nodeType === Node.ELEMENT_NODE && child.tagName.toLowerCase() === "br") s += "<br>";
             else s += inlineToMd(child);
         }
-        return s.replace(/​/g, "").replace(/\r\n/g, "\n").replace(/\n+/g, " ").trim();
+        return s.replace(/​/g, "").replace(/\r\n/g, "\n").replace(/\n/g, "<br>").trim();
     }
 
     function widgetAlign(widget) {
@@ -123,7 +138,18 @@
             }
             var tag = node.tagName.toLowerCase();
             if (tag === "ul" || tag === "ol") {
-                node.querySelectorAll("li").forEach(function (li) { lines.push("- " + inlineToMd(li).trim()); });
+                // Push items as ONE block joined by single \n - the outer
+                // lines.join("\n\n") would otherwise put blank lines between
+                // them and the wiki parser would treat each item as its own
+                // single-item list.
+                var items = [];
+                for (var k = 0; k < node.children.length; k++) {
+                    var liChild = node.children[k];
+                    if (liChild.tagName && liChild.tagName.toLowerCase() === "li") {
+                        items.push("- " + inlineToMd(liChild).trim());
+                    }
+                }
+                if (items.length) lines.push(items.join("\n"));
                 return;
             }
             var text = inlineToMd(node).trim();
@@ -132,7 +158,11 @@
             else if (tag === "blockquote") lines.push("> " + text);
             else if (tag === "pre") {
                 var lang = (node.getAttribute("data-code-lang") || "txt").trim();
-                lines.push("```" + lang + "\n" + text.replace(/​/g, "") + "\n```");
+                // Read body from the inner <code> only so the lang picker
+                // (a contenteditable=false span we inject) isn't included.
+                var codeEl = node.querySelector("code");
+                var codeText = codeEl ? (codeEl.textContent || "").replace(/​/g, "") : text.replace(/​/g, "");
+                lines.push("```" + lang + "\n" + codeText + "\n```");
             }
             else if (tag === "hr") lines.push("---");
             else if (node.classList.contains("smalltext")) lines.push("-# " + text);

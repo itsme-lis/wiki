@@ -1058,7 +1058,7 @@
                     chunks.push(linkhtml);
                 }
                 if (!chunks.length) chunks.push('<span class="infoboxwarning">(no citation details, this is likely a mistake)</span>');
-                return '<li id="cite' + idx + '">' + chunks.join(" ") + ' <a class="citeback" href="#" datacite-target="citeref' + idx + '">↑</a></li>';
+                return '<li id="cite' + idx + '">' + chunks.join(" ") + ' <a class="citeback" href="#" datacite-target="citeref' + idx + '"><img src="assets/images/icons/uplinksmall.png" alt="back"></a></li>';
             }).join("");
             html.push('<section class="citations"><h2>References</h2><ol>' + refs + "</ol></section>");
         }
