@@ -22,25 +22,10 @@ Text: We do not provide Support for Custom Builds. If you choose to Build from t
 - **⏳ 30+ minutes of your time**
 - **Install GitHub Desktop: **
 [Download GitHub Desktop | GitHub Desktop](https://desktop.github.com/download/)
-    
-        
-            
-            
-            
-            
-        
-        
-            
-            
-        
-        GitHub Desktop Download Button Either .EXE or .MSI
-
-    
-        
-            
-            
-            
-        
+::media left
+url: 1.png
+caption: GitHub Desktop Download Button Either .EXE or .MSI
+::      
          Did You Know?
         GitHub Desktop Requiring you to sign-in with your GitHub Account.If you don't wanna sign-in, you could use a “git clone” Command from CMD to Clone The Repository but with a few Limitation, make sure you already Install “Git for Windows”.
     
